@@ -1,0 +1,8 @@
+# Global object files and library information
+*.ali
+*.o
+
+# Specific directories
+.obj/*
+!.obj/.gitkeep
+lib/*.a
