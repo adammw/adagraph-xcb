@@ -30,6 +30,7 @@ with Ada.Task_Identification;
 with Ada.Unchecked_Conversion;
 with Interfaces.C.Strings;
 with XCB;
+pragma Elaborate_All(XCB);
 with System;
 
 package body Adagraph is
