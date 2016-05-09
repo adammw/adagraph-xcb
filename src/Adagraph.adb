@@ -26,7 +26,6 @@
 --
 -----------------------------------------------------------------------
 with Ada.Text_IO;
-with Ada.Task_Identification;
 with Ada.Unchecked_Conversion;
 with Interfaces.C.Strings;
 with XCB;
@@ -95,6 +94,16 @@ package body adagraph is
   -- Internal procedures --
   -------------------------
 
+  function Get_Atom_Id(Name : String; Only_If_Exists : Interfaces.Unsigned_8 := 0) return XCB.Atom_Id_Type is
+    C_Str_Ptr : Interfaces.C.Strings.chars_ptr := Interfaces.C.Strings.New_String(Name);
+    Cookie : XCB.Intern_Atom_Cookie_Type;
+    Reply : XCB.Intern_Atom_Reply_Access_Type;
+  begin
+    Cookie := XCB.Intern_Atom (Connection, Only_If_Exists, Name'Length, C_Str_Ptr);
+    Reply := XCB.Intern_Atom_Reply (Connection, Cookie, System.Null_Address);
+    return Reply.all.Atom;
+  end Get_Atom_Id;
+
   procedure Test_Cookie(Cookie : XCB.Void_Cookie_Type; Error_Message : String) is
     Error : XCB.Generic_Error_Access_Type;
   begin
@@ -156,6 +165,9 @@ package body adagraph is
 
     type Keysym_Type is new Interfaces.Unsigned_32;
 
+    procedure Sys_Exit (Exit_Status : Interfaces.Integer_32);
+    pragma Import (C, Sys_Exit, "exit");
+
     function Key_Symbols_Alloc (C : XCB.Connection_Access_Type) return Key_Symbols_Type_Access_Type;
     pragma Import (C, Key_Symbols_Alloc, "xcb_key_symbols_alloc");
 
@@ -191,8 +203,8 @@ package body adagraph is
             KeyPressed := Character'Val(Keysym);
           end if;
         when XCB.XCB_CLIENT_MESSAGE =>
-          Ada.Text_IO.Put_Line ("Clicked on the X-button");
-          Ada.Task_Identification.Abort_Task(Ada.Task_Identification.Current_Task);
+          Ada.Text_IO.Put_Line ("Clicked on the X-button, forcing program termination");
+          Sys_Exit(0);
         when others =>
           null;
       end case;
@@ -235,6 +247,21 @@ package body adagraph is
                                        Visual       => Screen.Root_Visual,
                                        Value_Mask   => Window_Value_Mask,
                                        Value_List   => WIndow_Value_List);
+
+    -- Enable WM_DELETE_WINDOW
+    declare
+      WmProtocols : XCB.Atom_Id_Type := Get_Atom_Id("WM_PROTOCOLS", 1);
+      WmDeleteWindow : XCB.Atom_Id_Type := Get_Atom_Id("WM_DELETE_WINDOW");
+    begin
+      Unused_Cookie := XCB.Change_Property (Connection,
+                                            XCB.XCB_PROP_MODE_REPLACE,
+                                            Window,
+                                            WmProtocols,
+                                            XCB.XCB_ATOM_ATOM,
+                                            32,
+                                            1,
+                                            WmDeleteWindow'Address);
+    end;
 
     -- Create graphics context
     Graphics := XCB.Generate_Id(Connection);
@@ -280,7 +307,7 @@ package body adagraph is
                         Window,
                         XCB.XCB_ATOM_WM_NAME,
                         XCB.XCB_ATOM_STRING,
-                        Interfaces.Unsigned_8(8),
+                        8,
                         C_Str'Length,
                         C_Str'address);
     Flush;
