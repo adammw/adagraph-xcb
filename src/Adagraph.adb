@@ -33,7 +33,9 @@ with XCB;
 pragma Elaborate_All(XCB);
 with System;
 
-package body Adagraph is
+package body adagraph is
+  pragma Linker_Options("-lxcb-keysyms");
+
   use type XCB.Gcontext_Id_Type;
   use type XCB.CW_Type;
   use type XCB.Gc_Type;
@@ -81,7 +83,7 @@ package body Adagraph is
   Graphics : XCB.Gcontext_Id_Type;
   ColorMap : XCB.Colormap_Id_Type;
   Font : XCB.Font_Id_Type;
-  pragma Warnings (Off, Font);
+  pragma Warnings(Off, Font);
 
   HasKeyboardEvent : Boolean := False;
   KeyPressed : Character;
@@ -387,4 +389,4 @@ package body Adagraph is
 
 begin
   Initialize;
-end Adagraph;
+end adagraph;
