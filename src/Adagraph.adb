@@ -198,9 +198,15 @@ package body adagraph is
         when XCB.XCB_KEY_PRESS =>
           KeyboardEvent := XCB.To_Key_Press_Event(Event);
           Keysym := Key_Press_Lookup_Keysym(Key_Symbols, KeyboardEvent, KeyboardEvent.State);
+          -- Latin 1 characters
           if Keysym < 255 then
             HasKeyboardEvent := True;
             KeyPressed := Character'Val(Keysym);
+          end if;
+          -- TTY function keys
+          if Keysym > 16#ff00# and Keysym < 16#ff1f# then
+            HasKeyboardEvent := True;
+            KeyPressed := Character'Val(Keysym - 16#ff00#);
           end if;
         when XCB.XCB_CLIENT_MESSAGE =>
           Ada.Text_IO.Put_Line ("Clicked on the X-button, forcing program termination");
